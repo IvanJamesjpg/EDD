@@ -1,0 +1,12 @@
+let
+    Source = Excel.Workbook(File.Contents("C:\Users\Administrator\Downloads\Part 2 PIvot Tables and Chart.xlsx"), null, true),
+    Data_Sheet = Source{[Item="Data",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(Data_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Employee ID", Int64.Type}, {"Rank", type text}, {"Department", type text}, {"WFH % in 2020", type number}, {"Number of kids", Int64.Type}, {"Salary $ (Yearly)", Int64.Type}, {"Received Bonus in 2020?", type text}, {"Satisfied from job", type text}, {"Employment Start Date", type date}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Salary $ (Yearly)", Currency.Type}}),
+    #"Sorted Rows" = Table.Sort(#"Changed Type1",{{"Salary $ (Yearly)", Order.Descending}}),
+    #"Grouped Rows" = Table.Group(#"Sorted Rows", {"Rank"}, {{"Average Salaries", each List.Average([#"Salary $ (Yearly)"]), type nullable number}}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Grouped Rows",{{"Average Salaries", Currency.Type}}),
+    #"Removed Blank Rows" = Table.SelectRows(#"Changed Type2", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null})))
+in
+    #"Removed Blank Rows"
